@@ -70,15 +70,15 @@ func scanForDevices() {
 					log.Printf("%s:%s", port.Name, err)
 				}
 				d.dev = dev
-				fmt.Printf("Adding Device %v\n", port.Name)
+				log.Printf("Watching Device %v\n", port.Name)
 				devices[port.Name] = d
 				go func(d *device) {
 					err := d.listen()
-					log.Printf("Error:  %s:%s", d.name, err)
-					log.Printf("Remove: %s", d.name)
+					log.Printf("Closing Device:  %s:%s", d.name, err)
+					// log.Printf("Error:  %s:%s", d.name, err)
 					err = d.dev.Close()
 					if err != nil {
-						log.Printf("Close:  %s:%s", d.name, err)
+						log.Printf("Closing Device:  %s:%s", d.name, err)
 					}
 					delete(devices, d.name)
 				}(&d)
