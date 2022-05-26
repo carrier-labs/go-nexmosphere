@@ -7,6 +7,10 @@ import (
 )
 
 func main() {
+
+	// Start the Nexmosphere watching process
+	go watchNexmosphere()
+
 	// Set routing rules
 	// http.HandleFunc("/action", handleAction) // HTTP GET/POST to control devices
 	http.HandleFunc("/listen", handleListen) // HTTP SSE Stream of Device Events
