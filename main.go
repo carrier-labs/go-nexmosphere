@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -15,10 +17,16 @@ func main() {
 	// http.HandleFunc("/action", handleAction) // HTTP GET/POST to control devices
 	http.HandleFunc("/listen", handleListen) // HTTP SSE Stream of Device Events
 	http.HandleFunc("/", handleAnythingElse) // Essentially a 404 catch-all
-	log.Println("Starting Server")
-	//Use the default DefaultServeMux.
 
-	err := http.ListenAndServe(":8081", nil)
+	// Get default port number
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "8089"
+	}
+
+	// Start HTTP Server
+	log.Printf("Starting Server on :%s", port)
+	err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 	if err != nil {
 		log.Fatal(err)
 
