@@ -48,7 +48,7 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 	defer endChan(c)
 
 	// Control System is now connected and live
-	log.Printf("Connection Live")
+	// log.Printf("Connection Live")
 
 	// Set HTTP Headers for SSE
 	w.Header().Set("Access-Control-Allow-Origin", "*")
