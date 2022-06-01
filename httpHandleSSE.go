@@ -4,11 +4,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"encoding/json"
 )
 
 type ssEvent struct {
 	Type    string
 	Message string
+}
+
+type SensorData struct {
+    Id string `json:"id"`
+    Command  string `json:"command"`
 }
 
 var sseChan []chan ssEvent
@@ -68,7 +75,28 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 
 		case sse := <-c: // Watch for events for this control system
 			w.Write([]byte(fmt.Sprintf("event: %s\n", sse.Type)))
-			w.Write([]byte(fmt.Sprintf("data: %s\n\n", sse.Message)))
+			// w.Write([]byte(fmt.Sprintf("data: %s\n\n", sse.Message)))
+			
+			antenna_event, _ := regexp.Compile(`X([0-9]+)A\[([0-9])\]`)
+			tag_event, _ := regexp.Compile(`XR\[([A-Z][A-Z])([0-9][0-9][0-9])\]`)
+
+    		if tag_event.MatchString(sse.Message) {
+				id := tag_event.FindStringSubmatch(sse.Message)[2]
+				action := tag_event.FindStringSubmatch(sse.Message)[1]
+				//fmt.Println("Tag event! ID: ", id, "Action:", action)
+				sd := SensorData{id, action}
+				b, _ := json.Marshal(sd)
+				w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(b))))
+			} else if antenna_event.MatchString(sse.Message) {
+				id := antenna_event.FindStringSubmatch(sse.Message)[1]
+				action := antenna_event.FindStringSubmatch(sse.Message)[2] // 0 == tag put back, 1 == tag removed
+        		//fmt.Println("Antenna event! ID: ", id, "Action:", action)
+        		sd := SensorData{id, action}
+				b, _ := json.Marshal(sd)
+				w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(b))))
+			} else {
+        		fmt.Println("Unhandled message: ", sse.Message)
+			}
 			flusher.Flush()
 		}
 	}
