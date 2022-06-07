@@ -11,6 +11,11 @@ type ssEvent struct {
 	Message string
 }
 
+type SensorData struct {
+	Id      string `json:"id"`
+	Command string `json:"command"`
+}
+
 var sseChan []chan ssEvent
 
 func getChan() chan ssEvent {
