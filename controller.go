@@ -91,15 +91,15 @@ func (c *controller) listen() error {
 		fb := c.decodeFeedback(scanner.Text())
 
 		sse := ssEvent{
-			Type: "unhandled",
+			Event: "unhandled",
 		}
 		switch fb.Type {
 		case "XR":
-			sse.Type, fb = c.doXRfb(fb)
+			sse.Event, fb = c.doXRfb(fb)
 		case "X":
-			sse.Type, fb = c.doXfb(fb)
+			sse.Event, fb = c.doXfb(fb)
 		case "D":
-			sse.Type, fb = c.doDfb(fb)
+			sse.Event, fb = c.doDfb(fb)
 		}
 
 		b, _ := json.Marshal(fb)
@@ -185,7 +185,7 @@ func (c *controller) doXfb(fb feedback) (string, feedback) {
 				}
 				b, _ := json.Marshal(f)
 				sse := ssEvent{
-					Type:    "rfid-antenna",
+					Event:   "rfid-antenna",
 					Message: string(b),
 				}
 				sendSSE(sse)

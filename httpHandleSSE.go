@@ -7,7 +7,7 @@ import (
 )
 
 type ssEvent struct {
-	Type    string
+	Event   string
 	Message string
 }
 
@@ -76,7 +76,7 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case sse := <-c: // Watch for events for this control system
-			w.Write([]byte(fmt.Sprintf("type: %s\n", sse.Type)))
+			w.Write([]byte(fmt.Sprintf("event: %s\n", sse.Event)))
 			w.Write([]byte(fmt.Sprintf("data: %s\n\n", sse.Message)))
 			flusher.Flush()
 		}
