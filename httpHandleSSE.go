@@ -30,10 +30,12 @@ func endChan(c chan ssEvent) {
 }
 
 func sendSSE(sse ssEvent) {
+	log.Printf("Sending: %+v", sse)
 	for _, c := range sseChan {
 		c <- sse
 	}
 }
+
 func handleListen(w http.ResponseWriter, r *http.Request) {
 
 	// Check connection can stream, and get flusher
@@ -58,6 +60,8 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	flusher.Flush()
 
+	log.Println("Connection Established")
+
 	// Start work loop
 	for {
 		select {
@@ -67,7 +71,7 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case sse := <-c: // Watch for events for this control system
-			w.Write([]byte(fmt.Sprintf("event: %s\n", sse.Type)))
+			w.Write([]byte(fmt.Sprintf("type: %s\n", sse.Type)))
 			w.Write([]byte(fmt.Sprintf("data: %s\n\n", sse.Message)))
 			flusher.Flush()
 		}

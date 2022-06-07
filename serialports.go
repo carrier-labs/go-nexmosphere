@@ -10,16 +10,16 @@ import (
 )
 
 func watchNexmosphere() {
-	scanForDevices()
+	scanForControllers()
 	ticker := time.NewTicker(time.Second * 2)
 	for range ticker.C {
-		scanForDevices()
+		scanForControllers()
 	}
 }
 
-// scanForDevices enumerates over all connected USB identifying Nexmosphere devices
-// It populates the devices map when it finds one
-func scanForDevices() {
+// scanForControllers enumerates over all connected USB identifying Nexmosphere controlers
+// It populates the controllers map when it finds one
+func scanForControllers() {
 
 	// Get all possible Serial Ports
 	ports, err := enumerator.GetDetailedPortsList()
@@ -48,33 +48,54 @@ func scanForDevices() {
 		}
 
 		// If port already added, bail
-		if _, ok := devices[port.Name]; ok {
+		if _, ok := controllers[port.Name]; ok {
 			continue
 		}
 
-		// Create device and open port
-		d, err := getDevice(port)
+		// Create controller and open port
+		c, err := getController(port)
 		if err != nil {
 			log.Printf("serial port:%s", err)
 			continue
 		}
-		devices[port.Name] = d
 
-		// LIsten to port, delete on close
+		controllers[port.Name] = c
+
+		// Listen to port, delete on close
 		log.Printf("Listening: %v\n", port.Name)
-		go func(d *device) {
-			err := d.listen()
-			log.Printf("Closing:  %s:%s", d.name, err)
-			err = d.dev.Close()
-			if err != nil {
-				log.Printf("close device:  %s:%s", d.name, err)
-			}
-			delete(devices, d.name)
-		}(d)
+		go func(c *controller) {
+			err := c.listen()
+			log.Printf("Closing:  %s:%s", c.name, err)
 
-		// Commands to device currently not responding
-		// time.Sleep(time.Second * 2)
-		// d.write("D001B[TYPE]")
+			err = c.port.Close()
+			if err != nil {
+				log.Printf("close controller:  %s:%s", c.name, err)
+			}
+
+			if c.qTimer != nil {
+				c.qTimer.Stop()
+				c.qTimer = nil
+			}
+
+			delete(controllers, c.name)
+		}(c)
+
+		// Send commands to get data
+		for i := 1; i <= 8; i++ {
+			c.addToQueue(system, fmt.Sprintf("D%03dB[TYPE]", i))
+		}
+
+		// Pause before starting comms ticker
+		time.Sleep(5 * time.Second)
+		go func(c *controller) {
+			c.qTimer = time.NewTicker(250 * time.Millisecond)
+			for range c.qTimer.C {
+				cmd := c.getFromQueue()
+				if cmd != "" {
+					c.write(cmd)
+				}
+			}
+		}(c)
 
 	}
 }
@@ -102,17 +123,17 @@ func checkForRS232(port *enumerator.PortDetails) bool {
 	return false
 }
 
-func getDevice(port *enumerator.PortDetails) (*device, error) {
+func getController(port *enumerator.PortDetails) (*controller, error) {
 	var err error
 	// Create new Device with details
-	d := &device{
-		md: deviceMD{
+	d := &controller{
+		md: controllerMD{
 			serialNo:    "",
 			productCode: "",
 			vid:         port.VID,
 			pid:         port.PID,
 		},
-		dev:   nil,
+		port:  nil,
 		name:  port.Name,
 		IsUSB: port.IsUSB,
 	}
@@ -126,7 +147,7 @@ func getDevice(port *enumerator.PortDetails) (*device, error) {
 	}
 
 	// Open the port
-	d.dev, err = serial.Open(port.Name, mode)
+	d.port, err = serial.Open(port.Name, mode)
 	if err != nil {
 		return nil, err
 
