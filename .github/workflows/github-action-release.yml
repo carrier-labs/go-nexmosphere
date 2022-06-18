@@ -1,25 +1,32 @@
-name: GitHub Actions Demo
+name: CICD
 on: [push]
 jobs:
-  Compile-RaspberryPi-Zero:
+  Build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Setup Go
+        uses: actions/setup-go@v3
         with:
           go-version: '>=1.18.2'
-      - run: go version
-  Explore-GitHub-Actions:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v3
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+          
+      - name: Set Tag into Envs
+        run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+    
+      - name: Build for Linux_arm7
+        run: env GOOS=linux GOARCH=arm GOARM=7 go build
+        
+      - name: Zip release_arm7_v$TAG_VERSION.zip
+        run: zip release_arm7_v$TAG_VERSION.zip go-nexmosphere
+        if: ${{ github.ref == 'refs/heads/main' && env.TAG_VERSION != '' ]}
+      
+      - name: Send Release
+        if: ${{ github.ref == 'refs/heads/main' && env.TAG_VERSION != '' ]}
+        uses: elgohr/Github-Release-Action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          title: MyReleaseMessage
+        
