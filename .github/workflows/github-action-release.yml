@@ -20,10 +20,10 @@ jobs:
         
       - name: Zip release_arm7_v$TAG_VERSION.zip
         run: zip release_arm7_v$TAG_VERSION.zip go-nexmosphere
-        if: ${{ github.ref == 'refs/heads/main' && env.TAG_VERSION != '' ]}
+        if: ${{ github.ref == 'refs/heads/main' && env.TAG_VERSION != '' }}
       
       - name: Send Release
-        if: ${{ github.ref == 'refs/heads/main' && env.TAG_VERSION != '' ]}
+        if: ${{ github.ref == 'refs/heads/main' && env.TAG_VERSION != '' }}
         uses: elgohr/Github-Release-Action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
