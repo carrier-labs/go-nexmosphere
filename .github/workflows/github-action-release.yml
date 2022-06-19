@@ -14,18 +14,18 @@ jobs:
           
       - name: set up env var
         run:  echo "TAG=$(echo git describe --exact-match --tags $(git log -n1 --pretty='%h'))" >> $GITHUB_ENV
-      - name: use env var
+      - name: Check env var
         run: echo ${{ env.TAG }}
     
       - name: Build for Linux_arm7
-        run: env GOOS=linux GOARCH=arm GOARM=7 go build
+        run: env GOOS=linux GOARCH=arm GOARM=7 go build -o release_arm7/go-nexmosphere
 
-      - name: Zip release_arm7_v$TAG_VERSION.zip
-        run: zip release_arm7_{{ env.TAG }} go-nexmosphere
-        if: env.TAG != '' 
+      - name: Zip release_arm7_{{ env.TAG }}.zip
+        if: startsWith(github.ref, 'refs/tags/')
+        run: zip release_arm7_{{ env.TAG }} release_arm7/go-nexmosphere
       
       - name: Send Release
-        if: env.TAG != ''
+        if: startsWith(github.ref, 'refs/tags/')
         uses: elgohr/Github-Release-Action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
