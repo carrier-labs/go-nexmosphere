@@ -21,15 +21,19 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: echo ${{ github.ref_name }}
 
-      - name: Zip release_arm7_${{ github.ref_name }}.zip
+#       - name: Zip release_arm7_${{ github.ref_name }}.zip
+#         if: startsWith(github.ref, 'refs/tags/')
+#         run: zip release_arm7_${{ github.ref_name }} release_arm7/go-nexmosphere
+
+      - name: Archive go-nexmosphere-release_arm7_${{ github.ref_name }}.tar.gz
         if: startsWith(github.ref, 'refs/tags/')
-        run: zip release_arm7_${{ github.ref_name }} release_arm7/go-nexmosphere
-      
+        run: tar -czvf go-nexmosphere-release_arm7_${{ github.ref_name }}.tar.gz release_arm7/go-nexmosphere
+ 
       - name: Send Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "release_*"
+          artifacts: "*.tzr.gz,*.zip"
 
         
