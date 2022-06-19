@@ -34,6 +34,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "*.tzr.gz,*.zip"
+          artifacts: "*.tar.gz,*.zip"
 
         
