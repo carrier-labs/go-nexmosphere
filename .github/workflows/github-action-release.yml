@@ -30,6 +30,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifcats: "release_*"
+          artifacts: "release_*"
 
         
