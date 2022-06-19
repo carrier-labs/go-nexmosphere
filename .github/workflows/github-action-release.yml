@@ -14,26 +14,20 @@ jobs:
           
       - name: Build for Linux_arm7
         run: env GOOS=linux GOARCH=arm GOARM=7 go build -o release_arm7/go-nexmosphere
-        
-      - name: set up env var
+             
+      - name: Sanity CHeck "github.ref_name"
         if: startsWith(github.ref, 'refs/tags/')
-        run:  echo "TAG=$(echo git describe --exact-match --tags $(git log -n1 --pretty='%h'))" >> $GITHUB_ENV
-        
-      - name: Check env var
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo $TAG
-          echo ${{ env.TAG }}
+        run: echo ${{ github.ref_name }}
 
-      - name: Zip release_arm7_{{ env.TAG }}.zip
+      - name: Zip release_arm7_${{ github.ref_name }}.zip
         if: startsWith(github.ref, 'refs/tags/')
-        run: zip release_arm7_{{ env.TAG }} release_arm7/go-nexmosphere
+        run: zip release_arm7_${{ github.ref_name }} release_arm7/go-nexmosphere
       
       - name: Send Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: elgohr/Github-Release-Action@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           title: MyReleaseMessage
         
