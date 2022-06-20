@@ -26,7 +26,7 @@ func scanForControllers() {
 		log.Fatal(err)
 	}
 	if len(ports) == 0 {
-		fmt.Println("No serial ports found!")
+		log.Debugf("No serial ports found!")
 		return
 	}
 

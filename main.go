@@ -20,20 +20,21 @@ func isProduction() bool {
 func init() {
 
 	logger, _ := zap.NewProduction()
+
 	log = logger.Sugar()
 
 	log.Infof("go-nexmosphere Started")
-	log.Info("-------------------------------------------------------------")
+	log.Info("-------------------------------------")
 
-	log.Infof("%20s: %s", "Version", version)
-	log.Infof("%20s: %s", "Production", isProduction())
+	log.Infof("%-15s: %s", "Version", version)
+	log.Infof("%-15s: %v", "Production", isProduction())
 
 	// Check for ENV to override default Port
 	if e := os.Getenv("NX_SERVER_PORT"); e != "" {
 		serverPort = e
 	}
 
-	log.Info("-------------------------------------------------------------")
+	log.Info("-------------------------------------")
 }
 
 func main() {
