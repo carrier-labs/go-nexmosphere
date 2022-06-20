@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"go.bug.st/serial"
@@ -55,21 +54,21 @@ func scanForControllers() {
 		// Create controller and open port
 		c, err := getController(port)
 		if err != nil {
-			log.Printf("serial port:%s", err)
+			log.Infof("Found serial port: %s", err)
 			continue
 		}
 
 		controllers[port.Name] = c
 
 		// Listen to port, delete on close
-		log.Printf("Listening: %v\n", port.Name)
+		log.Infof("Listening: %v\n", port.Name)
 		go func(c *controller) {
 			err := c.listen()
-			log.Printf("Closing:  %s:%s", c.name, err)
+			log.Errorf("Closing:  %s:%s", c.name, err)
 
 			err = c.port.Close()
 			if err != nil {
-				log.Printf("close controller:  %s:%s", c.name, err)
+				log.Errorf("close controller:  %s:%s", c.name, err)
 			}
 
 			if c.qTimer != nil {

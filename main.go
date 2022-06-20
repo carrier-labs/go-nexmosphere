@@ -3,10 +3,38 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
+
+	"go.uber.org/zap"
 )
+
+var serverPort string = "8089"
+var version = "develop"
+var log *zap.SugaredLogger
+
+func isProduction() bool {
+	return version != "develop"
+}
+
+func init() {
+
+	logger, _ := zap.NewProduction()
+	log = logger.Sugar()
+
+	log.Infof("go-nexmosphere Started")
+	log.Info("-------------------------------------------------------------")
+
+	log.Infof("%20s: %s", "Version", version)
+	log.Infof("%20s: %s", "Production", isProduction())
+
+	// Check for ENV to override default Port
+	if e := os.Getenv("NX_SERVER_PORT"); e != "" {
+		serverPort = e
+	}
+
+	log.Info("-------------------------------------------------------------")
+}
 
 func main() {
 
@@ -19,17 +47,19 @@ func main() {
 	http.HandleFunc("/", handleAnythingElse) // Essentially a 404 catch-all
 
 	// Get default port number
-	port := os.Getenv("SERVER_PORT")
+	port := os.Getenv("NX_SERVER_PORT")
 	if port == "" {
 		port = "8089"
 	}
 
 	// Start HTTP Server
-	log.Printf("Starting Server on :%s", port)
+	log.Infof("Starting Server on port %s", serverPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
-	if err != nil {
-		log.Fatal(err)
 
+	log.Sync()
+
+	if err != nil {
+		log.Fatal("Server Stopped: %s", err)
 	}
 }
 

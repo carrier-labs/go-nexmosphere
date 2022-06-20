@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -35,7 +34,7 @@ func endChan(c chan ssEvent) {
 }
 
 func sendSSE(sse ssEvent) {
-	log.Printf("Sending: %+v", sse)
+	log.Debugf("Sending: %+v", sse)
 	for _, c := range sseChan {
 		c <- sse
 	}
@@ -65,14 +64,14 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	flusher.Flush()
 
-	log.Println("Connection Established")
+	log.Infof("Connection Established")
 
 	// Start work loop
 	for {
 		select {
 
 		case <-r.Context().Done(): // Watch context to tell when connection closed by client
-			log.Println("Connection Closed")
+			log.Infof("Connection Closed")
 			return
 
 		case sse := <-c: // Watch for events for this control system

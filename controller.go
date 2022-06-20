@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -116,7 +115,7 @@ func (c *controller) write(cmd string) error {
 	// log.Printf("tx: %s", cmd)
 	_, err := c.port.Write([]byte(fmt.Sprintf("%s\r\n", cmd)))
 	if err != nil {
-		log.Printf("oop=%s", err)
+		log.Errorf("can't write to serial: %s", err)
 		return err
 	}
 	return err
