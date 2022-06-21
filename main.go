@@ -44,7 +44,7 @@ func main() {
 
 	// Set routing rules
 	// http.HandleFunc("/action", handleAction) // HTTP GET/POST to control devices
-	http.HandleFunc("/listen", handleListen) // HTTP SSE Stream of Device Events
+	http.HandleFunc("/sse", handleListen)    // HTTP SSE Stream of Device Events
 	http.HandleFunc("/", handleAnythingElse) // Essentially a 404 catch-all
 
 	// Get default port number
