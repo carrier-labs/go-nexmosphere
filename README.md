@@ -1,10 +1,10 @@
 # go-nexmosphere
 
-Go based server for communication with Nexmosphere sensor controllers using Go on Raspberry Pi devices.
+Go based server for communication with Nexmosphere sensor controllers using Go on Linux.
 
 Searches for USB based Serial devices an assumes they are Nexmosphere controllers.
 
-Provides a SSE interface for watching events.
+Provides SSE interface over HTTP for watching events.
 
 ## TODO:
 
