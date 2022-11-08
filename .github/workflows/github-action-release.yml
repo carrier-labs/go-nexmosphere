@@ -27,6 +27,13 @@ jobs:
       - name: Archive go-nexmosphere-${{ github.ref_name }}_linux_arm7.tar.gz
         if: startsWith(github.ref, 'refs/tags/')
         run: tar -czvf go-nexmosphere-${{ github.ref_name }}_linux_arm7.tar.gz release_linux_arm7/go-nexmosphere --transform s/release_linux_arm7/go-nexmosphere/
+
+      - name: Build for Linux_x86_64
+        run: env GOOS=linux GOARCH=amd64 go build -o release_linux_amd64/go-nexmosphere -ldflags="-X 'main.version=${{ github.ref_name }}'"
+
+      - name: Archive go-nexmosphere-${{ github.ref_name }}_linux_amd64.tar.gz
+        if: startsWith(github.ref, 'refs/tags/')
+        run: tar -czvf go-nexmosphere-${{ github.ref_name }}_linux_amd64.tar.gz release_linux_amd64/go-nexmosphere --transform s/release_linux_amd64/go-nexmosphere/
  
       - name: Send Release
         if: startsWith(github.ref, 'refs/tags/')

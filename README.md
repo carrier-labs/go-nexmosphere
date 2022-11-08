@@ -6,6 +6,12 @@ Searches for USB based Serial devices an assumes they are Nexmosphere controller
 
 Provides a SSE interface for watching events.
 
+## Configuration
+
+Configuration is done via environment variables.
+
+NX_SERVER_PORT - Port to listen on (Default: 8089)
+
 ## TODO:
 
 - Document event structure
