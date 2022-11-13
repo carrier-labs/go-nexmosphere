@@ -27,3 +27,11 @@ ID: 067b:2303 Prolific Technology, Inc. PL2303 Serial Port
 VID: 067b
 PID: 2303
 ```
+
+XN-135 appeas as:
+
+```
+ID: 067b:23d3 Prolific Technology, Inc. PL2303GL Serial Port
+VID: 067b
+PID: 23d3
+```
