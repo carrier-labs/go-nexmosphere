@@ -18,8 +18,12 @@ func isProduction() bool {
 }
 
 func init() {
-
-	logger, _ := zap.NewProduction()
+	var logger *zap.Logger
+	if isProduction() {
+		logger, _ = zap.NewProduction()
+	} else {
+		logger, _ = zap.NewDevelopment()
+	}
 
 	log = logger.Sugar()
 
