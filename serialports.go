@@ -79,13 +79,15 @@ func scanForControllers() {
 			delete(controllers, c.name)
 		}(c)
 
+		// Pause before starting comms ticker
+		time.Sleep(10 * time.Second)
+
 		// Send commands to get data
 		for i := 1; i <= 8; i++ {
+			log.Debug("Sending Info Req: ", i)
 			c.addToQueue(system, fmt.Sprintf("D%03dB[TYPE]", i))
 		}
 
-		// Pause before starting comms ticker
-		time.Sleep(5 * time.Second)
 		go func(c *controller) {
 			c.qTimer = time.NewTicker(250 * time.Millisecond)
 			for range c.qTimer.C {
@@ -105,10 +107,11 @@ func checkForUSB(port *enumerator.PortDetails) bool {
 	// Nexmosphere uses one of the following:
 	// VID 067b: Prolific Technology, Inc
 	// PID 2303: PL2303 Serial Port
+	// PID 23d3: PL2303GL Serial Port
 	switch port.VID {
 	case "067b": // Prolific Technology, Inc
 		switch port.PID {
-		case "2303": //PL2303 Serial Port
+		case "2303", "23d3":
 			return true
 		}
 	}
