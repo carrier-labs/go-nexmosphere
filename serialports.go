@@ -59,6 +59,7 @@ func scanForControllers() {
 		}
 
 		controllers[port.Name] = c
+		sendSystemUpdate()
 
 		// Listen to port, delete on close
 		log.Infof("Listening: %v\n", port.Name)
@@ -77,6 +78,7 @@ func scanForControllers() {
 			}
 
 			delete(controllers, c.name)
+			sendSystemUpdate()
 		}(c)
 
 		// Pause before starting comms ticker

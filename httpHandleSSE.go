@@ -66,6 +66,9 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("Connection Established")
 
+	// Send Current State (as a go routine so it can proceed to listen to this)
+	go sendSystemUpdate()
+
 	// Start work loop
 	for {
 		select {

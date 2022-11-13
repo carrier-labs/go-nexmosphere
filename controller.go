@@ -53,6 +53,29 @@ type feedback struct {
 
 var controllers = map[string]*controller{}
 
+func sendSystemUpdate() {
+
+	// local type for system
+	s := struct {
+		SensorConnection bool `json:"deviceConnection"`
+		ControllerCount  int  `json:"controllerCount"`
+		ClientCount      int  `json:"clientCount"`
+	}{
+		SensorConnection: len(controllers) > 0,
+		ControllerCount:  len(controllers),
+		ClientCount:      len(sseChan),
+	}
+
+	b, _ := json.Marshal(s)
+
+	// Send System Update
+	sendSSE(ssEvent{
+		Event:   "system",
+		Message: string(b),
+	})
+
+}
+
 func (c *controller) addToQueue(q Queue, cmd string) {
 	c.queue[q] = append(c.queue[q], cmd)
 }
