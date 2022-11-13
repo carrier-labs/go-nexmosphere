@@ -64,7 +64,7 @@ func handleListen(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	flusher.Flush()
 
-	log.Infof("Connection Established")
+	log.Infof("Connection Established: %s", r.RemoteAddr)
 
 	// Send Current State (as a go routine so it can proceed to listen to this)
 	go sendSystemUpdate()
