@@ -143,6 +143,23 @@ func (c *controller) decodeFeedback(data string) feedback {
 	return fb
 }
 
+func getRealButtonID(s string) int {
+	// string to int
+	i, _ := strconv.Atoi(s)
+	switch i {
+	case 3:
+		return 1
+	case 5:
+		return 2
+	case 9:
+		return 3
+	case 17:
+		return 4
+	default:
+		return 0
+	}
+}
+
 func (c *controller) doXfb(fb feedback) (string, feedback) {
 
 	// Set default to unknown
@@ -150,49 +167,69 @@ func (c *controller) doXfb(fb feedback) (string, feedback) {
 
 	d := c.getDevice(fb.Address)
 	if d == nil {
-		return "", fb
+		return "unknown", fb
 	}
 
 	switch d.Type {
-	case "XRDR1":
-		switch fb.Format {
-		case "A":
-			switch fb.Command {
-			case "1":
-				fb.Action = "pickup"
-				fb.Data = fmt.Sprintf("%03d", c.lastFB.Address)
-			case "0":
-				fb.Action = "putback"
-				fb.Data = fmt.Sprintf("%03d", c.lastFB.Address)
-			default:
+	case "XTB4N6": // 4 Button XT-B4
+		{
+
+			switch fb.Format {
+			case "A":
+				switch fb.Command {
+				case "0":
+					fb.Action = "release-all"
+				default:
+					fb.Action = "press"
+					fb.Data = fmt.Sprintf("%02d", getRealButtonID(fb.Command))
+				}
 			}
-		case "B":
-			fb.Action = "status"
-			// Send additional updates
-			tags := strings.Split(fb.Command, " ")
-			for _, tag := range tags {
-				add, _ := strconv.Atoi(strings.TrimPrefix(tag, "d"))
-				if add == 0 {
-					continue
+
+			return "button", fb
+		}
+
+	case "XRDR1": // RFID Reader
+		{
+			switch fb.Format {
+			case "A":
+				switch fb.Command {
+				case "1":
+					fb.Action = "pickup"
+					fb.Data = fmt.Sprintf("%03d", c.lastFB.Address)
+				case "0":
+					fb.Action = "putback"
+					fb.Data = fmt.Sprintf("%03d", c.lastFB.Address)
+				default:
 				}
-				// Send rfid-antenna update
-				f := feedback{
-					Address: fb.Address,
-					Action:  "putback",
-					Data:    fmt.Sprintf("%03d", add),
-					Raw:     fb.Raw,
+			case "B":
+				fb.Action = "status"
+				// Send additional updates
+				tags := strings.Split(fb.Command, " ")
+				for _, tag := range tags {
+					add, _ := strconv.Atoi(strings.TrimPrefix(tag, "d"))
+					if add == 0 {
+						continue
+					}
+					// Send rfid-antenna update
+					f := feedback{
+						Address: fb.Address,
+						Action:  "putback",
+						Data:    fmt.Sprintf("%03d", add),
+						Raw:     fb.Raw,
+					}
+					b, _ := json.Marshal(f)
+					sse := ssEvent{
+						Event:   "rfid-antenna",
+						Message: string(b),
+					}
+					sendSSE(sse)
 				}
-				b, _ := json.Marshal(f)
-				sse := ssEvent{
-					Event:   "rfid-antenna",
-					Message: string(b),
-				}
-				sendSSE(sse)
 			}
 		}
+		return "rfid-antenna", fb
 	}
 
-	return "rfid-antenna", fb
+	return "unknown", fb
 }
 
 func (c *controller) doXRfb(fb feedback) (string, feedback) {
