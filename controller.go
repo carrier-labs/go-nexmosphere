@@ -12,10 +12,10 @@ import (
 )
 
 type controllerMD struct {
-	serialNo    string
-	productCode string
-	vid         string // Vendor ID
-	pid         string // Product ID
+	serialNo    string // Serial number of the controller
+	productCode string // Product code from USB descriptor
+	vid         string // VendorID from USB descriptor
+	pid         string // ProductID from USB descriptor
 }
 
 type Queue int
@@ -26,19 +26,14 @@ const (
 )
 
 type controller struct {
-	IsUSB   bool
-	port    serial.Port
-	name    string
-	devices [1000]device
-	md      controllerMD
-	lastFB  feedback
-	queue   [2][]string
-	qTimer  *time.Ticker
-}
-
-type device struct {
-	Type   string
-	Serial string
+	IsUSB   bool         // Is this a USB controller?
+	port    serial.Port  // Serial port
+	name    string       // Controller name
+	md      controllerMD // Controller metadata
+	devices [1000]device // Array of devices
+	lastFB  feedback     // Last feedback received
+	queue   [2][]string  // Command queue
+	qTimer  *time.Ticker // Queue timer
 }
 
 type feedback struct {
@@ -53,6 +48,7 @@ type feedback struct {
 
 var controllers = map[string]*controller{}
 
+// sendSysyetemUpdate sends a system update to the controller
 func sendSystemUpdate() {
 
 	// local type for system
@@ -76,10 +72,12 @@ func sendSystemUpdate() {
 
 }
 
+// addToQueue adds a command to the queue
 func (c *controller) addToQueue(q Queue, cmd string) {
 	c.queue[q] = append(c.queue[q], cmd)
 }
 
+// getFromQueue returns the next command from the queue
 func (c *controller) getFromQueue() string {
 	var q Queue
 	var x string
@@ -102,52 +100,11 @@ func (c *controller) getDevice(i int) *device {
 	return nil
 }
 
-// listen scans incoming buffer for complete commands (Terminated by "CR+LF")
-func (c *controller) listen() error {
-
-	scanner := bufio.NewScanner(c.port)
-
-	for scanner.Scan() {
-		// log.Printf("rx: %s\n", scanner.Text())
-
-		fb := c.decodeFeedback(scanner.Text())
-
-		sse := ssEvent{
-			Event: "unhandled",
-		}
-		switch fb.Type {
-		case "XR":
-			sse.Event, fb = c.doXRfb(fb)
-		case "X":
-			sse.Event, fb = c.doXfb(fb)
-		case "D":
-			sse.Event, fb = c.doDfb(fb)
-		}
-
-		b, _ := json.Marshal(fb)
-		sse.Message = string(b)
-		sendSSE(sse)
-
-		c.lastFB = fb
-	}
-
-	return scanner.Err()
-}
-
-func (c *controller) write(cmd string) error {
-	// log.Printf("tx: %s", cmd)
-	_, err := c.port.Write([]byte(fmt.Sprintf("%s\r\n", cmd)))
-	if err != nil {
-		log.Errorf("can't write to serial: %s", err)
-		return err
-	}
-	return err
-}
-
-func (c *controller) decodeFeedback(data string) feedback {
+// decodeFeedback decodes a raw feedback string into a feedback struct
+func (c *controller) decodeFeedback(data string) *feedback {
 
 	// New feedback
-	fb := feedback{
+	fb := &feedback{
 		Raw:     data,
 		Command: strings.TrimSpace(data[strings.Index(data, `[`)+1 : strings.Index(data, `]`)]),
 	}
@@ -166,24 +123,52 @@ func (c *controller) decodeFeedback(data string) feedback {
 	return fb
 }
 
-func getRealButtonID(s string) int {
-	// string to int
-	i, _ := strconv.Atoi(s)
-	switch i {
-	case 3:
-		return 1
-	case 5:
-		return 2
-	case 9:
-		return 3
-	case 17:
-		return 4
-	default:
-		return 0
+// listen scans incoming buffer for complete commands (Terminated by "CR+LF")
+func (c *controller) listen() error {
+
+	scanner := bufio.NewScanner(c.port)
+
+	for scanner.Scan() {
+		// log.Printf("rx: %s\n", scanner.Text())
+
+		fb := c.decodeFeedback(scanner.Text())
+
+		sse := ssEvent{
+			Event: "unhandled",
+		}
+		switch fb.Type {
+		case "XR": // XR Antenna
+			sse.Event, fb = c.doXRfb(fb)
+		case "X": // X-Talk Command
+			sse.Event, fb = c.doXfb(fb)
+		case "D": // Diagnostic Command
+			sse.Event, fb = c.doDiagnosticfb(fb)
+		}
+
+		if fb != nil {
+			b, _ := json.Marshal(fb)
+			sse.Message = string(b)
+			sendSSE(sse)
+
+			c.lastFB = *fb
+		}
 	}
+
+	return scanner.Err()
 }
 
-func (c *controller) doXfb(fb feedback) (string, feedback) {
+// write sends a command to controller
+func (c *controller) write(cmd string) error {
+	// log.Printf("tx: %s", cmd)
+	_, err := c.port.Write([]byte(fmt.Sprintf("%s\r\n", cmd)))
+	if err != nil {
+		log.Errorf("can't write to serial: %s", err)
+		return err
+	}
+	return err
+}
+
+func (c *controller) doXfb(fb *feedback) (string, *feedback) {
 
 	// Set default to unknown
 	fb.Action = "unknown"
@@ -194,68 +179,20 @@ func (c *controller) doXfb(fb feedback) (string, feedback) {
 	}
 
 	switch d.Type {
+
 	case "XTB4N6": // 4 Button XT-B4
-		{
-
-			switch fb.Format {
-			case "A":
-				switch fb.Command {
-				case "0":
-					fb.Action = "release-all"
-				default:
-					fb.Action = "press"
-					fb.Data = fmt.Sprintf("%02d", getRealButtonID(fb.Command))
-				}
-			}
-
-			return "button", fb
-		}
+		return "button", d.processFbXTB4N6(fb)
 
 	case "XRDR1": // RFID Reader
-		{
-			switch fb.Format {
-			case "A":
-				switch fb.Command {
-				case "1":
-					fb.Action = "pickup"
-					fb.Data = fmt.Sprintf("%03d", c.lastFB.Address)
-				case "0":
-					fb.Action = "putback"
-					fb.Data = fmt.Sprintf("%03d", c.lastFB.Address)
-				default:
-				}
-			case "B":
-				fb.Action = "status"
-				// Send additional updates
-				tags := strings.Split(fb.Command, " ")
-				for _, tag := range tags {
-					add, _ := strconv.Atoi(strings.TrimPrefix(tag, "d"))
-					if add == 0 {
-						continue
-					}
-					// Send rfid-antenna update
-					f := feedback{
-						Address: fb.Address,
-						Action:  "putback",
-						Data:    fmt.Sprintf("%03d", add),
-						Raw:     fb.Raw,
-					}
-					b, _ := json.Marshal(f)
-					sse := ssEvent{
-						Event:   "rfid-antenna",
-						Message: string(b),
-					}
-					sendSSE(sse)
-				}
-			}
-		}
-		return "rfid-antenna", fb
-	}
+		return "rfid-antenna", c.processFbXRDR1(fb)
 
-	return "unknown", fb
+	default:
+		return "unknown", fb
+
+	}
 }
 
-func (c *controller) doXRfb(fb feedback) (string, feedback) {
+func (c *controller) doXRfb(fb *feedback) (string, *feedback) {
 
 	switch fb.Command[0:2] {
 	case "PU":
@@ -269,7 +206,7 @@ func (c *controller) doXRfb(fb feedback) (string, feedback) {
 	return "rfid-tag", fb
 }
 
-func (c *controller) doDfb(fb feedback) (string, feedback) {
+func (c *controller) doDiagnosticfb(fb *feedback) (string, *feedback) {
 
 	// Split up the command
 	s := strings.Split(fb.Command, "=")
