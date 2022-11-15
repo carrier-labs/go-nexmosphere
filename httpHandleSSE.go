@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -33,7 +34,12 @@ func endChan(c chan ssEvent) {
 	}
 }
 
-func sendSSE(sse ssEvent) {
+func sendSSE(event string, msg interface{}) {
+	b, _ := json.Marshal(msg)
+	sse := ssEvent{
+		Event:   event,
+		Message: string(b),
+	}
 	log.Debugf("Sending: %+v", sse)
 	for _, c := range sseChan {
 		c <- sse

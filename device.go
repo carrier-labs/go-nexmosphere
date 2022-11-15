@@ -1,49 +1,74 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
+
+type Button struct {
+	Closed  bool // Physical button state (wire closed)
+	Pressed bool // Logical button state (debounced)
+}
+
+const BUTTON_COUNT int = 4 // Number of buttons
+
+var DEBOUNCE int = 1 // Debounce time in seconds
 
 type device struct {
 	Type   string
 	Serial string
-	State  struct {
-		ButtonPressed [4]bool
-	}
+	Button [BUTTON_COUNT]Button
 }
 
-// setButtonPressed(buttonID int,state) sets the state of a button
-func (d *device) setButtonPressed(buttonID int, state bool, fb *feedback) {
+// setButton(buttonID int,state) sets the state of a button
+func (d *device) setButton(buttonID int, state bool, fb *feedback) {
+
+	// Check if button exists
+	if buttonID > BUTTON_COUNT {
+		return
+	}
+
+	// get pointer to button for easier access
+	b := &d.Button[buttonID-1]
+
 	// If state hasn't changed, return
-	if d.State.ButtonPressed[buttonID-1] == state {
+	if b.Closed == state {
 		return
 	}
 
 	// Set state
-	d.State.ButtonPressed[buttonID-1] = state
-	// Button Update
+	b.Closed = state
+
+	// Send raw switch update
 	f := feedback{
 		Address: fb.Address,
 		Data:    fmt.Sprintf("%02d", buttonID),
 		Raw:     fb.Raw,
 	}
-	// Set actual state
 	if state {
-		f.Action = "press"
+		f.Action = "closed"
 	} else {
-		f.Action = "release"
+		f.Action = "open"
 	}
-	// Send button update
-	b, _ := json.Marshal(f)
-	sse := ssEvent{
-		Event:   "button",
-		Message: string(b),
+	sendSSE("button", f)
+
+	// If switch is closed, send pressed update
+	if b.Closed && !b.Pressed {
+		b.Pressed = true
+		f.Action = "press"
+		sendSSE("button", f)
+		go func(f feedback) {
+			// Wait for debounce time
+			time.Sleep(time.Second * time.Duration(DEBOUNCE))
+			b.Pressed = false
+			f.Action = "release"
+			sendSSE("button", f)
+		}(f)
 	}
-	sendSSE(sse)
+
 }
 
 // processFbXTB4N6 processes feedback from XTB4N6 Push Button Interface
@@ -58,7 +83,7 @@ func (d *device) processFbXTB4N6(fb *feedback) *feedback {
 		}
 		// Set button states
 		for b := 1; b <= 4; b++ {
-			d.setButtonPressed(b, i&(int(math.Pow(2, float64(b)))) > 0, fb)
+			d.setButton(b, i&(int(math.Pow(2, float64(b)))) > 0, fb)
 		}
 	}
 	return nil
@@ -93,12 +118,8 @@ func (c *controller) processFbXRDR1(fb *feedback) *feedback {
 				Data:    fmt.Sprintf("%03d", add),
 				Raw:     fb.Raw,
 			}
-			b, _ := json.Marshal(f)
-			sse := ssEvent{
-				Event:   "rfid-antenna",
-				Message: string(b),
-			}
-			sendSSE(sse)
+
+			sendSSE("rfid-antenna", f)
 		}
 	}
 

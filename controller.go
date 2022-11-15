@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -62,13 +61,8 @@ func sendSystemUpdate() {
 		ClientCount:      len(sseChan),
 	}
 
-	b, _ := json.Marshal(s)
-
 	// Send System Update
-	sendSSE(ssEvent{
-		Event:   "system",
-		Message: string(b),
-	})
+	sendSSE("system", s)
 
 }
 
@@ -133,23 +127,19 @@ func (c *controller) listen() error {
 
 		fb := c.decodeFeedback(scanner.Text())
 
-		sse := ssEvent{
-			Event: "unhandled",
-		}
+		event := "unhandled"
+
 		switch fb.Type {
 		case "XR": // XR Antenna
-			sse.Event, fb = c.doXRfb(fb)
+			event, fb = c.doXRfb(fb)
 		case "X": // X-Talk Command
-			sse.Event, fb = c.doXfb(fb)
+			event, fb = c.doXfb(fb)
 		case "D": // Diagnostic Command
-			sse.Event, fb = c.doDiagnosticfb(fb)
+			event, fb = c.doDiagnosticfb(fb)
 		}
 
 		if fb != nil {
-			b, _ := json.Marshal(fb)
-			sse.Message = string(b)
-			sendSSE(sse)
-
+			sendSSE(event, fb)
 			c.lastFB = *fb
 		}
 	}
