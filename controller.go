@@ -62,7 +62,7 @@ func sendSystemUpdate() {
 	}
 
 	// Send System Update
-	sendSSE("system", s)
+	sendSSE("controller", s)
 
 }
 
@@ -222,5 +222,5 @@ func (c *controller) doDiagnosticfb(fb *feedback) (string, *feedback) {
 	fb.Data = fb.Command
 	fb.Action = "update"
 
-	return "system", fb
+	return "device", fb
 }
