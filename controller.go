@@ -64,6 +64,20 @@ func sendSystemUpdate() {
 	// Send System Update
 	sendSSE("controller", s)
 
+	// Set device types
+	for _, c := range controllers {
+		for i, d := range c.devices {
+			if d.Type != "" {
+				fb := &feedback{
+					Address: i,
+					Action:  "update",
+					Data:    fmt.Sprintf("TYPE=%s", d.Type),
+				}
+				sendSSE("device", fb)
+			}
+		}
+	}
+
 }
 
 // addToQueue adds a command to the queue
