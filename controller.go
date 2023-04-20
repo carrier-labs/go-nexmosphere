@@ -137,7 +137,6 @@ func (c *controller) listen() error {
 	scanner := bufio.NewScanner(c.port)
 
 	for scanner.Scan() {
-		// log.Printf("rx: %s\n", scanner.Text())
 
 		fb := c.decodeFeedback(scanner.Text())
 
@@ -189,6 +188,9 @@ func (c *controller) doXfb(fb *feedback) (string, *feedback) {
 
 	case "XRDR1": // RFID Reader
 		return "rfid-antenna", c.processFbXRDR1(fb)
+
+	case "XY240": // X-Eye Presence & Airbutton
+		return "presence", d.processFbXY240(fb)
 
 	default:
 		return "unknown", fb

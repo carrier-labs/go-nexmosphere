@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"go.bug.st/serial"
@@ -32,7 +33,6 @@ func scanForControllers() {
 
 	for _, port := range ports {
 		var isNexmosphere bool
-
 		// Check port for Nexmosphere device
 		switch port.IsUSB {
 		case true:
@@ -105,14 +105,13 @@ func scanForControllers() {
 
 // checkForUSB will return true if a port matches Nexmosphere profile
 func checkForUSB(port *enumerator.PortDetails) bool {
-
 	// Nexmosphere uses one of the following:
 	// VID 067b: Prolific Technology, Inc
 	// PID 2303: PL2303 Serial Port
 	// PID 23d3: PL2303GL Serial Port
-	switch port.VID {
+	switch strings.ToLower(port.VID) {
 	case "067b": // Prolific Technology, Inc
-		switch port.PID {
+		switch strings.ToLower(port.PID) {
 		case "2303", "23d3":
 			return true
 		}

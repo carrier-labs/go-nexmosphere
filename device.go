@@ -89,6 +89,27 @@ func (d *device) processFbXTB4N6(fb *feedback) *feedback {
 	return nil
 }
 
+// processFbXY240 processes feedback from XY240 X-Eye Presence & AirButton Sensor
+func (d *device) processFbXY240(fb *feedback) *feedback {
+	// log.Infof("XY240: %+v", fb)
+
+	switch fb.Format {
+	case "B":
+		// Split command into parts
+		parts := strings.Split(fb.Command, "=")
+		if len(parts) != 2 {
+			return fb
+		}
+		switch parts[0] {
+		case "Dz": // Detection Zone
+			fb.Action = "detection-zone"
+			fb.Data = parts[1]
+		}
+
+	}
+	return fb
+}
+
 // processFbXRDR1 processes feedback from XRDR1 RFID Reader
 func (c *controller) processFbXRDR1(fb *feedback) *feedback {
 	switch fb.Format {
