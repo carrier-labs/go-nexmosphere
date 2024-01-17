@@ -108,11 +108,12 @@ func checkForUSB(port *enumerator.PortDetails) bool {
 	// Nexmosphere uses one of the following:
 	// VID 067b: Prolific Technology, Inc
 	// PID 2303: PL2303 Serial Port
+	// PID 23a3: PL2303 Serial Port
 	// PID 23d3: PL2303GL Serial Port
 	switch strings.ToLower(port.VID) {
 	case "067b": // Prolific Technology, Inc
 		switch strings.ToLower(port.PID) {
-		case "2303", "23d3":
+		case "2303", "23a3", "23d3":
 			return true
 		}
 	}
