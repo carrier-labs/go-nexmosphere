@@ -20,18 +20,11 @@ NX_SERVER_PORT - Port to listen on (Default: 8089)
 
 ## USB Notes
 
-XN-185 appears as:
+### VID/PID
 
-```
-ID: 067b:2303 Prolific Technology, Inc. PL2303 Serial Port
-VID: 067b
-PID: 2303
-```
 
-XN-135 appeas as:
-
-```
-ID: 067b:23d3 Prolific Technology, Inc. PL2303GL Serial Port
-VID: 067b
-PID: 23d3
-```
+| Controller | VID  | PID  | Vendor                    | Product              |
+| ---------- | ---- | ---- | ------------------------- | -------------------- |
+| XN-185     | 067b | 2303 | Prolific Technology, Inc. | PL2303 Serial Port   |
+| XN-185     | 067b | 23a3 | Prolific Technology, Inc. | ATEN Serial Bridge   |
+| XN-135     | 067b | 23d3 | Prolific Technology, Inc. | PL2303GL Serial Port |
