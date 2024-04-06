@@ -123,7 +123,7 @@ func checkForUSB(port *enumerator.PortDetails) bool {
 }
 
 // checkForRS232 returns false always, is placeholder for future RS232 link code via passed config
-func checkForRS232(port *enumerator.PortDetails) bool {
+func checkForRS232(_ *enumerator.PortDetails) bool {
 	return false
 }
 
