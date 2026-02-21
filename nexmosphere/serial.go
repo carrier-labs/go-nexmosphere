@@ -107,14 +107,20 @@ func (s *Service) scanForControllers() {
 		}(c)
 
 		// Start command queue processor
+		c.qStopChan = make(chan struct{})
 		go func(c *Controller) {
 			c.qTimer = time.NewTicker(250 * time.Millisecond)
 			defer c.qTimer.Stop()
 
-			for range c.qTimer.C {
-				cmd := c.getFromQueue()
-				if cmd != "" {
-					c.write(cmd)
+			for {
+				select {
+				case <-c.qTimer.C:
+					cmd := c.getFromQueue()
+					if cmd != "" {
+						c.write(cmd)
+					}
+				case <-c.qStopChan:
+					return
 				}
 			}
 		}(c)

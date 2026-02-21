@@ -34,6 +34,7 @@ type Controller struct {
 	lastFB               *feedback
 	queue                [2][]string
 	qTimer               *time.Ticker
+	qStopChan            chan struct{}
 	service              *Service
 	ready                bool
 	pendingDeviceQueries int
@@ -146,6 +147,11 @@ func (c *Controller) write(cmd string) error {
 
 // close closes the controller port and stops the queue timer
 func (c *Controller) close() error {
+	// Signal queue processor to stop
+	if c.qStopChan != nil {
+		close(c.qStopChan)
+		c.qStopChan = nil
+	}
 	if c.qTimer != nil {
 		c.qTimer.Stop()
 		c.qTimer = nil
